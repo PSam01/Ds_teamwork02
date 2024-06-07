@@ -100,12 +100,12 @@ public class ClientApp extends JFrame {
 
     private void performLogin() {
         try {
-            toServer.writeUTF("LOGIN");
-            toServer.writeUTF(userField.getText());
-            toServer.writeUTF(new String(passwordField.getPassword()));
-            toServer.flush();
+            toServer.writeUTF("LOGIN"); // Εντολή για σύνδεση
+            toServer.writeUTF(userField.getText()); // Αποστολή username
+            toServer.writeUTF(new String(passwordField.getPassword())); // Αποστολή password
+            toServer.flush(); // Ολοκλήρωση εκπομπής δεδομένων
 
-            String response = fromServer.readUTF();
+            String response = fromServer.readUTF(); // Λήψη απόκρισης από τον server
             if (response.equals("SUCCESS")) {
                 logArea.setText("Login successful.");
             } else {
@@ -115,6 +115,7 @@ public class ClientApp extends JFrame {
             logArea.setText("Error during login: " + e.getMessage());
         }
     }
+
 
     private void searchProducts() {
         try {

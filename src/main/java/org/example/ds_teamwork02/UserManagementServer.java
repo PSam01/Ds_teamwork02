@@ -110,6 +110,8 @@ public class UserManagementServer extends JFrame {
             }
         }
 
+
+
         private void handleSearchProduct() throws IOException {
             // Logic to search products
         }
