@@ -4,9 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.net.Socket;
+import java.rmi.Naming;
 
 public class ClientApp extends JFrame {
     private JTextField userField;
@@ -14,9 +12,7 @@ public class ClientApp extends JFrame {
     private JButton loginButton, searchButton, buyButton;
     private JTextArea productArea, logArea;
     private JTextField searchField, quantityField;
-    private Socket socket;
-    private DataOutputStream toServer;
-    private DataInputStream fromServer;
+    private UserManagementInterface server;
 
     public ClientApp() {
         createUI();
@@ -80,15 +76,15 @@ public class ClientApp extends JFrame {
             }
         });
 
+        enableActions(false);
+
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
     }
 
     private void setupConnection() {
         try {
-            socket = new Socket("localhost", 8000);
-            toServer = new DataOutputStream(socket.getOutputStream());
-            fromServer = new DataInputStream(socket.getInputStream());
+            server = (UserManagementInterface) Naming.lookup("//localhost/UserManagementServer");
         } catch (Exception e) {
             logArea.setText("Error connecting to server: " + e.getMessage());
         }
@@ -96,12 +92,7 @@ public class ClientApp extends JFrame {
 
     private void performLogin() {
         try {
-            toServer.writeUTF("LOGIN");
-            toServer.writeUTF(userField.getText());
-            toServer.writeUTF(new String(passwordField.getPassword()));
-            toServer.flush();
-
-            String response = fromServer.readUTF();
+            String response = server.login(userField.getText(), new String(passwordField.getPassword()));
             if (response.equals("SUCCESS")) {
                 logArea.setText("Login successful.");
                 enableActions(true);
@@ -114,19 +105,16 @@ public class ClientApp extends JFrame {
         }
     }
 
-
     private void enableActions(boolean enable) {
         searchButton.setEnabled(enable);
         buyButton.setEnabled(enable);
+        searchField.setEnabled(enable);
+        quantityField.setEnabled(enable);
     }
 
     private void searchProducts() {
         try {
-            toServer.writeUTF("SEARCH_PRODUCT");
-            toServer.writeUTF(searchField.getText());
-            toServer.flush();
-
-            String products = fromServer.readUTF();
+            String products = server.searchProduct(searchField.getText());
             productArea.setText(products);
         } catch (Exception e) {
             logArea.setText("Error searching products: " + e.getMessage());
@@ -135,12 +123,7 @@ public class ClientApp extends JFrame {
 
     private void buyProduct() {
         try {
-            toServer.writeUTF("BUY_PRODUCT");
-            toServer.writeUTF(searchField.getText());
-            toServer.writeUTF(quantityField.getText());
-            toServer.flush();
-
-            String response = fromServer.readUTF();
+            String response = server.buyProduct(searchField.getText(), Integer.parseInt(quantityField.getText()));
             logArea.setText(response);
         } catch (Exception e) {
             logArea.setText("Error buying product: " + e.getMessage());

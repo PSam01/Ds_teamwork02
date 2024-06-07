@@ -53,9 +53,18 @@ public class ProductWarehouseServer {
         public void run() {
             try {
                 while (true) {
-                    String productId = input.readUTF();
-                    int quantity = input.readInt();
-                    processOrder(productId, quantity);
+                    String command = input.readUTF();
+                    switch (command) {
+                        case "SEARCH_PRODUCT":
+                            handleSearchProduct();
+                            break;
+                        case "BUY_PRODUCT":
+                            handleBuyProduct();
+                            break;
+                        default:
+                            System.out.println("Received unknown command: " + command);
+                            break;
+                    }
                 }
             } catch (IOException e) {
                 System.out.println("Error processing client request: " + e.getMessage());
@@ -70,7 +79,29 @@ public class ProductWarehouseServer {
             }
         }
 
-        private void processOrder(String productId, int quantity) throws IOException {
+        private void handleSearchProduct() throws IOException {
+            // Logic for searching a product in the warehouse
+            String productQuery = input.readUTF();
+            StringBuilder response = new StringBuilder();
+
+            for (Map.Entry<String, Integer> entry : productStock.entrySet()) {
+                if (entry.getKey().contains(productQuery) || productQuery.isEmpty()) {
+                    response.append("Product ID: ").append(entry.getKey()).append(", Stock: ").append(entry.getValue()).append("\n");
+                }
+            }
+
+            if (response.length() == 0) {
+                response.append("No products found.");
+            }
+
+            output.writeUTF(response.toString());
+            output.flush();
+        }
+
+        private void handleBuyProduct() throws IOException {
+            String productId = input.readUTF();
+            int quantity = Integer.parseInt(input.readUTF());
+
             if (productStock.containsKey(productId) && productStock.get(productId) >= quantity) {
                 productStock.put(productId, productStock.get(productId) - quantity);
                 output.writeUTF("ORDER_CONFIRMED");
@@ -86,4 +117,4 @@ public class ProductWarehouseServer {
     public static void main(String[] args) {
         new ProductWarehouseServer();
     }
-};
+}
