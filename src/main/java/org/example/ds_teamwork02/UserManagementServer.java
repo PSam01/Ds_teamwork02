@@ -2,8 +2,6 @@ package org.example.ds_teamwork02;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -14,23 +12,24 @@ public class UserManagementServer extends JFrame {
     private ServerSocket serverSocket;
     private Map<String, String> userCredentials = new HashMap<>();
     private JTextArea logArea;
+    private Socket warehouseSocket; // Socket for communication with ProductWarehouseServer
+    private DataOutputStream toWarehouse;
+    private DataInputStream fromWarehouse;
 
     public UserManagementServer() {
-        // Initialize server
         createUI();
         initializeServer();
         setupDummyUsers();
+        connectToWarehouseServer(); // Establish connection to Warehouse Server
     }
 
     private void createUI() {
         setTitle("User Management Server");
         setSize(500, 300);
         setLayout(new BorderLayout());
-
         logArea = new JTextArea();
         logArea.setEditable(false);
         add(new JScrollPane(logArea), BorderLayout.CENTER);
-
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
     }
@@ -48,9 +47,20 @@ public class UserManagementServer extends JFrame {
         }
     }
 
+    private void connectToWarehouseServer() {
+        try {
+            warehouseSocket = new Socket("localhost", 8001);
+            toWarehouse = new DataOutputStream(warehouseSocket.getOutputStream());
+            fromWarehouse = new DataInputStream(warehouseSocket.getInputStream());
+        } catch (IOException e) {
+            logArea.append("Failed to connect to Warehouse Server: " + e.getMessage() + "\n");
+        }
+    }
+
     private void setupDummyUsers() {
-        userCredentials.put("admin", "admin");  // Dummy admin user
-        userCredentials.put("user1", "user1");  // Dummy regular user
+        userCredentials.put("admin", "adminpass");
+        userCredentials.put("user1", "password1");
+        userCredentials.put("123", "123");
     }
 
     private class ClientHandler implements Runnable {
@@ -61,8 +71,8 @@ public class UserManagementServer extends JFrame {
         public ClientHandler(Socket socket) {
             this.clientSocket = socket;
             try {
-                input = new DataInputStream(clientSocket.getInputStream());
-                output = new DataOutputStream(clientSocket.getOutputStream());
+                input = new DataInputStream(socket.getInputStream());
+                output = new DataOutputStream(socket.getOutputStream());
             } catch (IOException e) {
                 logArea.append("Failed to create data streams: " + e.getMessage() + "\n");
             }
@@ -110,14 +120,28 @@ public class UserManagementServer extends JFrame {
             }
         }
 
-
-
         private void handleSearchProduct() throws IOException {
-            // Logic to search products
+            String productQuery = input.readUTF();
+            toWarehouse.writeUTF("SEARCH_PRODUCT");
+            toWarehouse.writeUTF(productQuery);
+            toWarehouse.flush();
+
+            String response = fromWarehouse.readUTF();
+            output.writeUTF(response);
+            output.flush();
         }
 
         private void handleBuyProduct() throws IOException {
-            // Logic to buy products
+            String productId = input.readUTF();
+            String quantity = input.readUTF();
+            toWarehouse.writeUTF("BUY_PRODUCT");
+            toWarehouse.writeUTF(productId);
+            toWarehouse.writeUTF(quantity);
+            toWarehouse.flush();
+
+            String response = fromWarehouse.readUTF();
+            output.writeUTF(response);
+            output.flush();
         }
     }
 
@@ -125,4 +149,3 @@ public class UserManagementServer extends JFrame {
         new UserManagementServer();
     }
 }
-

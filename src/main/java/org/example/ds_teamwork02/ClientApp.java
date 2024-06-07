@@ -28,7 +28,6 @@ public class ClientApp extends JFrame {
         setSize(600, 400);
         setLayout(new BorderLayout());
 
-        // Login Panel
         JPanel northPanel = new JPanel();
         northPanel.add(new JLabel("Username:"));
         userField = new JTextField(10);
@@ -40,7 +39,6 @@ public class ClientApp extends JFrame {
         northPanel.add(loginButton);
         add(northPanel, BorderLayout.NORTH);
 
-        // Product Panel
         JPanel centerPanel = new JPanel(new GridLayout(2, 1));
         productArea = new JTextArea(10, 30);
         productArea.setEditable(false);
@@ -55,7 +53,6 @@ public class ClientApp extends JFrame {
 
         add(centerPanel, BorderLayout.CENTER);
 
-        // Action Panel
         JPanel southPanel = new JPanel();
         quantityField = new JTextField(5);
         buyButton = new JButton("Buy");
@@ -67,7 +64,6 @@ public class ClientApp extends JFrame {
         southPanel.add(new JScrollPane(logArea));
         add(southPanel, BorderLayout.SOUTH);
 
-        // Action Listeners
         loginButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 performLogin();
@@ -100,22 +96,29 @@ public class ClientApp extends JFrame {
 
     private void performLogin() {
         try {
-            toServer.writeUTF("LOGIN"); // Εντολή για σύνδεση
-            toServer.writeUTF(userField.getText()); // Αποστολή username
-            toServer.writeUTF(new String(passwordField.getPassword())); // Αποστολή password
-            toServer.flush(); // Ολοκλήρωση εκπομπής δεδομένων
+            toServer.writeUTF("LOGIN");
+            toServer.writeUTF(userField.getText());
+            toServer.writeUTF(new String(passwordField.getPassword()));
+            toServer.flush();
 
-            String response = fromServer.readUTF(); // Λήψη απόκρισης από τον server
+            String response = fromServer.readUTF();
             if (response.equals("SUCCESS")) {
                 logArea.setText("Login successful.");
+                enableActions(true);
             } else {
                 logArea.setText("Login failed.");
+                enableActions(false);
             }
         } catch (Exception e) {
             logArea.setText("Error during login: " + e.getMessage());
         }
     }
 
+
+    private void enableActions(boolean enable) {
+        searchButton.setEnabled(enable);
+        buyButton.setEnabled(enable);
+    }
 
     private void searchProducts() {
         try {
@@ -148,4 +151,3 @@ public class ClientApp extends JFrame {
         new ClientApp();
     }
 }
-
